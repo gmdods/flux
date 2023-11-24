@@ -146,22 +146,6 @@ static_assert(issue_62());
 
 }
 
-TEST_CASE("take5")
-{
-    // test taking "too few" elements in stream
-    {
-        std::istringstream iss{"1 2 3 4 5 6 7"};
-
-        auto taken = flux::from_istream<int>(iss).take(5);
-
-        STATIC_CHECK(check_equal(taken, {1, 2, 3, 4, 5}));
-
-	int next = 0;
-	REQUIRE(iss >> next);
-	REQUIRE(next == 6);
-    }
-}
-
 TEST_CASE("take")
 {
     bool result = test_take();
@@ -178,4 +162,34 @@ TEST_CASE("take")
 
         REQUIRE_THROWS_AS(flux::from_range(list).take(-1000), flux::unrecoverable_error);
     }
+
+    // test taking "too few" elements in stream
+    {
+        std::istringstream iss{"1 2 3 4 5 6 7"};
+
+        auto taken = flux::from_istream<int>(iss).take(5);
+
+        REQUIRE(check_equal(taken, {1, 2, 3, 4, 5}));
+
+	int next = 0;
+	REQUIRE(iss >> next);
+	REQUIRE(next == 6);
+    }
+
+    // test for_each taking "too few" elements in stream
+    {
+        std::istringstream iss{"1 2 3 4 5 6 7"};
+
+	int j = 0;
+        flux::from_istream<int>(iss)
+		.take(5)
+		.for_each([&](auto i) {
+			REQUIRE(i == ++j);
+		});
+
+	int next = 0;
+	REQUIRE(iss >> next);
+	REQUIRE(next == 6);
+    }
+
 }
