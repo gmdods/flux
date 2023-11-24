@@ -56,8 +56,13 @@ public:
 
         static constexpr auto inc(auto& self, cursor_type& cur)
         {
-            flux::inc(self.base_, cur.base_cur);
             cur.length = num::checked_sub(cur.length, distance_t{1});
+            if constexpr (multipass_sequence<Base>) {
+                 flux::inc(self.base_, cur.base_cur);
+            } else {
+                 if (cur.length > 0)
+                     flux::inc(self.base_, cur.base_cur);
+            }
         }
 
         static constexpr auto read_at(auto& self, cursor_type const& cur)
@@ -87,15 +92,15 @@ public:
         static constexpr auto dec(auto& self, cursor_type& cur)
             requires bidirectional_sequence<Base>
         {
-            flux::dec(self.base_, cur.base_cur);
             cur.length = num::checked_add(cur.length, distance_t{1});
+            flux::dec(self.base_, cur.base_cur);
         }
 
         static constexpr auto inc(auto& self, cursor_type& cur, distance_t offset)
             requires random_access_sequence<Base>
         {
-            flux::inc(self.base_, cur.base_cur, offset);
             cur.length = num::checked_sub(cur.length, offset);
+            flux::inc(self.base_, cur.base_cur, offset);
         }
 
         static constexpr auto distance(auto& self, cursor_type const& from, cursor_type const& to)
@@ -136,11 +141,15 @@ public:
         static constexpr auto for_each_while(auto& self, auto&& pred) -> cursor_type
         {
             distance_t len = self.count_;
+	        if (len == 0) return first(self);
             auto cur = flux::for_each_while(self.base_, [&](auto&& elem) {
-                return (len-- > 0) && std::invoke(pred, FLUX_FWD(elem));
+                return std::invoke(pred, FLUX_FWD(elem)) && (--len > 0);
             });
 
-            return cursor_type{.base_cur = std::move(cur), .length = ++len};
+            if constexpr (multipass_sequence<Base>)
+		        if (len == 0)
+			        flux::inc(self.base_, cur);
+            return cursor_type{.base_cur = std::move(cur), .length = len};
         }
     };
 };

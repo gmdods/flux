@@ -10,6 +10,7 @@
 #include "test_utils.hpp"
 
 #include <array>
+#include <sstream>
 #include <list>
 
 namespace {
@@ -143,6 +144,22 @@ constexpr bool issue_62()
 }
 static_assert(issue_62());
 
+}
+
+TEST_CASE("take5")
+{
+    // test taking "too few" elements in stream
+    {
+        std::istringstream iss{"1 2 3 4 5 6 7"};
+
+        auto taken = flux::from_istream<int>(iss).take(5);
+
+        STATIC_CHECK(check_equal(taken, {1, 2, 3, 4, 5}));
+
+	int next = 0;
+	REQUIRE(iss >> next);
+	REQUIRE(next == 6);
+    }
 }
 
 TEST_CASE("take")
