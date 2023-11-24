@@ -141,7 +141,7 @@ public:
         static constexpr auto for_each_while(auto& self, auto&& pred) -> cursor_type
         {
             distance_t len = self.count_;
-	        if (len == 0) return first(self);
+            if (len == 0) return first(self);
             auto cur = flux::for_each_while(self.base_, [&](auto&& elem) {
                 return std::invoke(pred, FLUX_FWD(elem)) && (--len > 0);
             });

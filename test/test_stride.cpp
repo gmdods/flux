@@ -12,6 +12,7 @@
 #include <array>
 #include <limits>
 #include <list>
+#include <sstream>
 
 namespace {
 
@@ -350,6 +351,18 @@ TEST_CASE("stride")
 
         REQUIRE(check_equal(rev, {7, 4, 1}));
         REQUIRE(rev.sum() == 12);
+    }
+
+    // Test with single-pass sequence
+    {
+        std::stringstream iss{"1 2 3 4 5 6 7 8 9"};
+        auto seq = flux::from_istream<int>(iss).stride(3).take(2);
+
+        REQUIRE(check_equal(seq, {1, 4}));
+
+	int next = 0;
+	REQUIRE(iss >> next);
+	REQUIRE(next == 5);
     }
 
     // detail::advance tests to keep CodeCov happy
